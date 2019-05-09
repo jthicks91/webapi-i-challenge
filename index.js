@@ -61,35 +61,44 @@ server.delete("/users/:id", (req, res) => {
   hubs
     .remove(id)
     .then(removedUser => {
-      if (removedUser) {
-        res.json(removedUser);
+      if (!removedUser) {
+        res
+          .status(404)
+          .json({ message: "The user with the specified ID does not exist." });
       } else {
-        res.status(404).json({ err: "incorrect id" });
+        res.json(removedUser);
       }
     })
-    .catch(({ code, message }) => {
-      res.status(code).json({ err: message });
+    .catch(() => {
+      res.status(500).json({ err: "The user could not be removed" });
     });
 });
 
 // Updates the user with the specified id using data from the request body. Returns the modified document, NOT the original.
 server.put("/users/:id", (req, res) => {
   const { id } = req.params;
-  const changes = req.body;
+  const { name, bio } = req.body;
 
+  if (!name || !bio) {
+    res
+      .status(400)
+      .json({ errorMessage: "Please provide name and bio for the user." });
+    return;
+  }
   hubs
-    .update(id, changes)
+    .update(id, { name, bio })
     .then(updatedUser => {
-      if (updatedUser) {
-        res.json(updatedUser);
-      } else {
+      if (!updatedUser) {
         res
           .status(404)
-          .json({ err: "The user with the specified ID does not exist." });
+          .json({ message: "The user with the specified ID does not exist." });
       }
+      res.status(200).json(user);
     })
-    .catch(({ code, message }) => {
-      res.status(code).json({ err: message });
+    .catch(() => {
+      res
+        .status(500)
+        .json({ err: "The user information could not be modified." });
     });
 });
 
@@ -105,7 +114,7 @@ server.get("/users/:id", (req, res) => {
       } else {
         res
           .status(404)
-          .json({ message: "The uder with the specificed ID does not exist" });
+          .json({ message: "The user with the specificed ID does not exist" });
       }
     })
     .catch(err => {
